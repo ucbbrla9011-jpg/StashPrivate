@@ -182,7 +182,8 @@ const QueryField: React.FC<{
   focus: ReturnType<typeof useFocus>;
   value: string;
   setValue: (query: string) => void;
-}> = ({ focus, value, setValue }) => {
+  onEnter?: () => void;
+}> = ({ focus, value, setValue, onEnter }) => {
   const intl = useIntl();
 
   const [displayQuery, setDisplayQuery] = useState(value);
@@ -206,6 +207,7 @@ const QueryField: React.FC<{
       value={displayQuery}
       setValue={(v) => onQueryChange(v)}
       placeholder={`${intl.formatMessage({ id: "actions.search" })}…`}
+      onEnter={onEnter}
     />
   );
 };
@@ -214,6 +216,7 @@ interface IQueryableProps {
   inputFocus?: ReturnType<typeof useFocus>;
   query?: string;
   setQuery?: (query: string) => void;
+  onEnter?: () => void;
 }
 
 export const CandidateList: React.FC<
@@ -227,6 +230,7 @@ export const CandidateList: React.FC<
   inputFocus,
   query,
   setQuery,
+  onEnter,
   items,
   onSelect,
   canExclude,
@@ -242,6 +246,7 @@ export const CandidateList: React.FC<
           focus={inputFocus}
           value={query}
           setValue={(v) => setQuery(v)}
+          onEnter={onEnter}
         />
       )}
       <ul>
@@ -265,6 +270,7 @@ export const SidebarListFilter: React.FC<{
   selected: Option[];
   excluded?: Option[];
   candidates: Option[];
+  modifierCandidates?: Option[];
   singleValue?: boolean;
   onSelect: (item: Option, exclude: boolean) => void;
   onUnselect: (item: Option, exclude: boolean) => void;
@@ -275,6 +281,7 @@ export const SidebarListFilter: React.FC<{
   postSelected?: React.ReactNode;
   preCandidates?: React.ReactNode;
   postCandidates?: React.ReactNode;
+  onOpen?: () => void;
   // used to store open/closed state in SidebarStateContext
   sectionID?: string;
 }> = ({
@@ -282,6 +289,7 @@ export const SidebarListFilter: React.FC<{
   selected,
   excluded,
   candidates,
+  modifierCandidates,
   onSelect,
   onUnselect,
   canExclude,
@@ -292,6 +300,7 @@ export const SidebarListFilter: React.FC<{
   postCandidates,
   preSelected,
   postSelected,
+  onOpen,
   sectionID,
 }) => {
   // TODO - sort items?
@@ -322,6 +331,20 @@ export const SidebarListFilter: React.FC<{
     }
   }
 
+  function onEnter() {
+    if (candidates && candidates.length === 1) {
+      selectHook(candidates[0], false);
+    }
+  }
+
+  const items = useMemo(() => {
+    if (!modifierCandidates) {
+      return candidates;
+    }
+
+    return [...modifierCandidates, ...candidates];
+  }, [candidates, modifierCandidates]);
+
   return (
     <SidebarSection
       className="sidebar-list-filter"
@@ -344,16 +367,18 @@ export const SidebarListFilter: React.FC<{
           {postSelected ? <div className="extra">{postSelected}</div> : null}
         </>
       }
+      onOpen={onOpen}
     >
       {preCandidates ? <div className="extra">{preCandidates}</div> : null}
       <CandidateList
-        items={candidates}
+        items={items}
         onSelect={selectHook}
         canExclude={canExclude}
         inputFocus={inputFocus}
         query={query}
         setQuery={setQuery}
         singleValue={singleValue}
+        onEnter={onEnter}
       />
       {postCandidates ? <div className="extra">{postCandidates}</div> : null}
     </SidebarSection>
